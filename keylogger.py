@@ -1,6 +1,5 @@
 from pynput import keyboard
 from richxerox import *
-import re
 import os
 
 log_file = open("log.txt", "w")
