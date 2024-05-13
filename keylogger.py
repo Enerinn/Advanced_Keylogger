@@ -2,6 +2,8 @@ from time import sleep
 from pynput import keyboard, mouse
 from richxerox import *
 import os
+import smtplib
+from email.message import EmailMessage
 import subprocess
 import shutil
 
